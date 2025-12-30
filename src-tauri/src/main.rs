@@ -31,31 +31,28 @@ fn is_image(obj: &Object) -> bool {
 }
 
 #[tauri::command]
-async fn compress_pdf(file_path: String) -> Result<(String, String), String> {
+async fn compress_pdf(file_path: String) -> Result<(Vec<u8>, String), String> {
     println!("Komprimiere: {}", file_path);
     let mut doc = Document::load(&file_path).map_err(|e| e.to_string())?;
-
+    
     let mut image_ids = Vec::new();
-    for (id, object) in &doc.objects {
-        if is_image(object) {
-            image_ids.push(*id);
-        }
+    for (id, object) in &doc.objects { 
+        if is_image(object) { 
+            image_ids.push(*id); 
+        } 
     }
-
+    
     let mut count = 0;
     for id in image_ids {
         if let Some(Object::Stream(stream)) = doc.objects.get_mut(&id) {
             if let Ok(content) = stream.decompressed_content() {
                 if let Ok(img) = image::load_from_memory(&content) {
+                    // Hier die Qualität/Größe anpassen (z.B. 1200x1600, JPEG 70%)
                     let resized = img.resize(1200, 1600, image::imageops::FilterType::Triangle);
                     let mut buffer = Vec::new();
-                    if let Ok(_) =
-                        resized.write_to(&mut Cursor::new(&mut buffer), ImageOutputFormat::Jpeg(70))
-                    {
+                    if let Ok(_) = resized.write_to(&mut Cursor::new(&mut buffer), ImageOutputFormat::Jpeg(70)) {
                         stream.content = buffer;
-                        stream
-                            .dict
-                            .set(b"Filter".to_vec(), Object::Name(b"DCTDecode".to_vec()));
+                        stream.dict.set(b"Filter".to_vec(), Object::Name(b"DCTDecode".to_vec()));
                         stream.dict.remove(b"Length");
                         count += 1;
                     }
@@ -64,26 +61,24 @@ async fn compress_pdf(file_path: String) -> Result<(String, String), String> {
         }
     }
 
-    let path = Path::new(&file_path);
-    let new_filename = format!(
-        "{}_min.{}",
-        path.file_stem().unwrap().to_str().unwrap(),
-        path.extension().unwrap().to_str().unwrap()
-    );
-    let new_path = path.parent().unwrap().join(&new_filename);
-
-    doc.save(&new_path).map_err(|e| e.to_string())?;
-
+    // ÄNDERUNG: Statt auf Disk zu speichern, schreiben wir in einen Buffer (RAM)
+    let mut out_buffer = Vec::new();
+    doc.save_to(&mut out_buffer).map_err(|e| e.to_string())?;
+    
+    // Ersparnis berechnen
     let old_size = std::fs::metadata(&file_path).map(|m| m.len()).unwrap_or(1);
-    let new_size = std::fs::metadata(&new_path).map(|m| m.len()).unwrap_or(1);
+    let new_size = out_buffer.len() as u64;
+    
     let savings = if old_size > 0 {
         format!("-{}%", 100 - (new_size * 100 / old_size))
     } else {
         "0%".to_string()
     };
-
-    println!("Fertig. {} Bilder optimiert.", count);
-    Ok((new_path.to_str().unwrap().to_string(), savings))
+    
+    println!("Fertig. {} Bilder optimiert. Größe: {} -> {}", count, old_size, new_size);
+    
+    // Wir geben die Bytes UND den Ersparnis-String zurück
+    Ok((out_buffer, savings))
 }
 
 // ==========================================
