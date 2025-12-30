@@ -1,8 +1,8 @@
 [package]
 name = "secure-pdf-tool"
-version = "0.1.1"
+version = "0.2.0"
 description = "Secure PDF Tool"
-authors = ["you"]
+authors = ["Becomsolut"]
 edition = "2021"
 
 [build-dependencies]
