@@ -1,0 +1,33 @@
+[package]
+name = "secure-pdf-tool"
+version = "0.1.1"
+description = "Secure PDF Tool"
+authors = ["you"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0", features = [] }
+
+[dependencies]
+# Kern-Framework V2
+tauri = { version = "2.0.0", features = [] }
+# Plugins (Shell für 'open', FS für Dateizugriff)
+tauri-plugin-shell = "2.0.0"
+tauri-plugin-fs = "2"
+
+# JSON Serialisierung
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# PDF Logic (bleibt gleich)
+lopdf = "0.31.0"
+image = { version = "0.24.7", features = ["jpeg", "png"] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+md5 = "0.7.0"
+rc4 = "0.1.0"
+rand = "0.8.5"
+time = "0.3"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
