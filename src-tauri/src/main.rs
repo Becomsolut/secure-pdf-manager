@@ -11,6 +11,7 @@ use rc4::{
     consts::{U10, U5},
     KeyInit, Rc4, StreamCipher,
 };
+use sysinfo::{System, RefreshKind, MemoryRefreshKind};
 
 // ==========================================
 // TEIL 1: KOMPRIMIERUNG (Unverändert)
@@ -27,6 +28,43 @@ fn is_image(obj: &Object) -> bool {
             false
         }
         _ => false,
+    }
+}
+// Ganz oben bei den Imports hinzufügen (falls noch nicht da):
+// (pdf_extract muss nicht explizit 'use'd werden, wenn wir den vollen Pfad nutzen)
+
+#[tauri::command]
+async fn extract_text(file_path: String) -> Result<String, String> {
+    // Wir nutzen jetzt pdf_extract statt lopdf direkt für das Lesen
+    println!("Lese Text aus: {}", file_path);
+
+    // run_blocking ist hier wichtig, weil pdf_extract synchron arbeitet,
+    // wir aber in einer async Funktion sind.
+    let text_result = tauri::async_runtime::spawn_blocking(move || {
+        pdf_extract::extract_text(&file_path)
+    }).await;
+
+    // Fehlerbehandlung für den Thread-Join und die PDF-Extraktion
+    match text_result {
+        Ok(extraction_result) => match extraction_result {
+            Ok(text) => {
+                let clean_text = text.trim();
+                if clean_text.is_empty() {
+                    return Err("Kein Text extrahierbar (evtl. nur Bilder).".to_string());
+                }
+                
+                // Optional: Limitierung für das LLM
+                if clean_text.len() > 100_000 {
+                    let mut truncated = clean_text[0..100_000].to_string();
+                    truncated.push_str("\n... (Text gekürzt)");
+                    return Ok(truncated);
+                }
+                
+                Ok(clean_text.to_string())
+            },
+            Err(e) => Err(format!("PDF Parsing Fehler: {}", e)),
+        },
+        Err(_) => Err("Interner Thread-Fehler beim Lesen.".to_string()),
     }
 }
 
@@ -249,14 +287,19 @@ async fn apply_encryption(file_path: String, password: String) -> Result<String,
 
     Ok(new_path.to_str().unwrap().to_string())
 }
-
+#[tauri::command]
+fn get_total_memory() -> u64 {
+    let mut sys = System::new_all();
+    sys.refresh_memory();
+    sys.total_memory() // Gibt Bytes zurück
+}
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![compress_pdf, apply_encryption])
+        .invoke_handler(tauri::generate_handler![compress_pdf, apply_encryption, extract_text, get_total_memory])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

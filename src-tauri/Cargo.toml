@@ -28,6 +28,8 @@ md5 = "0.7.0"
 rc4 = "0.1.0"
 rand = "0.8.5"
 time = "0.3"
+sysinfo = "0.37.2"
+pdf-extract = "0.10.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

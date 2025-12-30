@@ -4,7 +4,8 @@ import {
   Layers,
   Edit3,
   Bot,
-  FileImage
+  FileImage,
+  BotIcon
 } from "lucide-react";
 import { Merger } from "./features/Merger";
 import './App.css'
@@ -14,6 +15,7 @@ import { Signer } from "./features/Signer";
 import { Compressor } from "./features/Compressor";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
+import AiAssistant from "./components/AiAssistent";
 
 // --- Typen & Komponenten für Dashboard ---
 type ActionCardProps = {
@@ -124,6 +126,13 @@ function App() {
             onClick={() => setCurrentView('edit')}
           />
           <ActionCard
+            title="Smart"
+            description="Fotos in ein PDF-Dokument umwandeln."
+            icon={BotIcon}
+            onClick={() => setCurrentView('ai-chat')}
+          />
+
+          <ActionCard
             title="Bilder zu PDF"
             description="Fotos in ein PDF-Dokument umwandeln."
             icon={ImageIcon}
@@ -161,6 +170,7 @@ function App() {
       {currentView === 'compress' && (
         <Compressor onBack={goHome} />
       )}
+      {currentView === 'ai-chat' && <AiAssistant onBack={() => setCurrentView('dashboard')} />}
 
       {/* Footer Sicherheitshinweis (Immer sichtbar) */}
       <footer className="mt-auto pt-12 text-slate-400 text-sm flex items-center gap-2">
