@@ -33,37 +33,42 @@ const ActionCard = ({ title, description, icon: Icon, onClick }: ActionCardProps
   </button>
 );
 
-useEffect(() => {
-  const checkForUpdates = async () => {
-    try {
-      // Prüft auf GitHub
-      const update = await check();
-      if (update?.available) {
-        const yes = confirm(`Update v${update.version} verfügbar! Installieren & Neustarten?`);
-        if (yes) {
-          await update.downloadAndInstall();
-          await relaunch();
-        }
-      }
-    } catch (e) {
-      console.error("Update check failed", e);
-    }
-  };
-
-  // Check nur im fertigen Build, nicht bei localhost
-  if (!window.location.host.includes('localhost')) {
-    checkForUpdates();
-  }
-}, []);
-
 // --- Haupt App ---
 function App() {
   // Navigation State: 'dashboard' | 'merge' | 'edit' ...
   const [currentView, setCurrentView] = useState('dashboard');
   const [error, setError] = useState<string | null>(null);
+  const [editorFile, setEditorFile] = useState<File | null>(null);
 
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        // Prüft auf GitHub
+        const update = await check();
+        if (update?.available) {
+          const yes = confirm(`Update v${update.version} verfügbar! Installieren & Neustarten?`);
+          if (yes) {
+            await update.downloadAndInstall();
+            await relaunch();
+          }
+        }
+      } catch (e) {
+        console.error("Update check failed", e);
+      }
+    };
+
+    // Check nur im fertigen Build, nicht bei localhost
+    if (!window.location.host.includes('localhost')) {
+      checkForUpdates();
+    }
+  }, []);
   // Funktion zum Zurückkehren
   const goHome = () => setCurrentView('dashboard');
+
+  const handleMergerEdit = (mergedFile: File) => {
+    setEditorFile(mergedFile);
+    setCurrentView('edit'); // Wechselt zum Editor
+  };
 
   return (
     <div className="min-h-screen p-8 flex flex-col items-center max-w-5xl mx-auto">
@@ -135,10 +140,10 @@ function App() {
 
       {/* 2. Merger Ansicht */}
       {currentView === 'merge' && (
-        <Merger onBack={goHome} />
+        <Merger onBack={goHome} onEdit={handleMergerEdit}/>
       )}
       {currentView === 'edit' && (
-        <Editor onBack={goHome} />
+        <Editor onBack={goHome} initialFile={editorFile}/>
       )}
       {currentView === 'sign' && (
         <Signer onBack={goHome} />

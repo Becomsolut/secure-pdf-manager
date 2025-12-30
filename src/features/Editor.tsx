@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { DropZone } from '../components/DropZone';
 import { renderPdfToImages } from '../utils/pdfRenderer';
@@ -12,17 +12,32 @@ type PageState = {
   imageSrc: string;      // Das Vorschaubild
 };
 
-export function Editor({ onBack }: { onBack: () => void }) {
+interface EditorProps {
+  onBack: () => void;
+  initialFile?: File | null; // <--- NEU: Optionales Start-File
+}
+
+export function Editor({ onBack, initialFile }: EditorProps) {
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<PageState[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [createdPdfBlob, setCreatedPdfBlob] = useState<Blob | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
+  useEffect(() => {
+    if (initialFile) {
+      loadFile(initialFile);
+    }
+  }, [initialFile]);
+  
   // 1. Datei laden und rendern
   const handleFileDrop = async (droppedFiles: File[]) => {
     if (droppedFiles.length === 0) return;
-    const selectedFile = droppedFiles[0]; // Wir bearbeiten hier nur eine Datei auf einmal
+    // Wir bearbeiten hier nur die erste Datei
+    loadFile(droppedFiles[0]);
+  };
+
+  const loadFile = async (selectedFile: File) => {
     setFile(selectedFile);
     setIsLoading(true);
 
@@ -62,7 +77,7 @@ export function Editor({ onBack }: { onBack: () => void }) {
   const movePage = (index: number, direction: -1 | 1) => {
     const newPages = [...pages];
     if (index + direction < 0 || index + direction >= newPages.length) return;
-    
+
     // Tauschen
     const temp = newPages[index];
     newPages[index] = newPages[index + direction];
@@ -81,7 +96,7 @@ export function Editor({ onBack }: { onBack: () => void }) {
       const newPdf = await PDFDocument.create();
 
       for (const pageState of pages) {
-        if (pageState.isDeleted) continue; 
+        if (pageState.isDeleted) continue;
         const [copiedPage] = await newPdf.copyPages(pdfDoc, [pageState.originalIndex]);
         const existingRotation = copiedPage.getRotation().angle;
         copiedPage.setRotation(degrees(existingRotation + pageState.rotation));
@@ -89,7 +104,7 @@ export function Editor({ onBack }: { onBack: () => void }) {
       }
 
       const pdfBytes = await newPdf.save();
-      
+
       // NEU: Blob erstellen und Modal öffnen statt direkt Download
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
       setCreatedPdfBlob(blob);
@@ -108,12 +123,12 @@ export function Editor({ onBack }: { onBack: () => void }) {
   if (!file) {
     return (
       <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4">
-         <div className="flex items-center mb-6">
+        <div className="flex items-center mb-6">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-700 font-medium px-2 py-1">← Zurück</button>
           <h2 className="text-2xl font-bold ml-4 text-slate-800">Seiten bearbeiten</h2>
         </div>
         <DropZone onFilesDrop={handleFileDrop} label="PDF zum Bearbeiten hier ablegen" />
-        {isLoading && <div className="text-center mt-10 text-slate-500 flex justify-center gap-2"><Loader2 className="animate-spin"/> Lade Vorschau...</div>}
+        {isLoading && <div className="text-center mt-10 text-slate-500 flex justify-center gap-2"><Loader2 className="animate-spin" /> Lade Vorschau...</div>}
       </div>
     );
   }
@@ -121,7 +136,7 @@ export function Editor({ onBack }: { onBack: () => void }) {
   return (
     <div className="w-full max-w-6xl mx-auto h-[calc(100vh-100px)] flex flex-col">
       {/* Toolbar */}
-      <SaveModal 
+      <SaveModal
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
         pdfBlob={createdPdfBlob}
@@ -134,13 +149,13 @@ export function Editor({ onBack }: { onBack: () => void }) {
           </button>
           <span className="font-bold text-slate-700 truncate max-w-[200px]">{file.name}</span>
         </div>
-        
-        <button 
+
+        <button
           onClick={saveChanges}
           disabled={isLoading}
           className="bg-primary hover:bg-primaryHover text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 shadow-sm transition-transform active:scale-95"
         >
-          {isLoading ? <Loader2 className="animate-spin"/> : <Save size={20} />}
+          {isLoading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
           Speichern
         </button>
       </div>
@@ -148,23 +163,23 @@ export function Editor({ onBack }: { onBack: () => void }) {
       {/* Grid Area */}
       <div className="flex-1 overflow-y-auto p-4 bg-slate-100 rounded-xl border border-slate-200">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          
+
           {pages.map((page, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className={`relative group bg-white rounded-lg shadow-sm transition-all duration-200 border-2
                 ${page.isDeleted ? 'opacity-50 border-red-200 bg-red-50' : 'border-transparent hover:border-blue-300'}
               `}
             >
               {/* Image Container */}
               <div className="aspect-[1/1.4] w-full overflow-hidden rounded-t-lg bg-slate-200 relative">
-                <img 
-                  src={page.imageSrc} 
+                <img
+                  src={page.imageSrc}
                   alt={`Seite ${idx + 1}`}
                   className="w-full h-full object-contain transition-transform duration-300"
-                  style={{ transform: `rotate(${page.rotation}deg)` }} 
+                  style={{ transform: `rotate(${page.rotation}deg)` }}
                 />
-                
+
                 {/* Deleted Overlay */}
                 {page.isDeleted && (
                   <div className="absolute inset-0 flex items-center justify-center bg-red-100/50 backdrop-blur-[1px]">
@@ -176,17 +191,17 @@ export function Editor({ onBack }: { onBack: () => void }) {
               {/* Controls Footer */}
               <div className="p-2 flex items-center justify-between bg-white rounded-b-lg border-t border-slate-100">
                 <span className="text-xs font-bold text-slate-400 w-6">{idx + 1}</span>
-                
+
                 <div className="flex gap-1">
-                  <button onClick={() => movePage(idx, -1)} disabled={idx === 0} className="p-1.5 hover:bg-slate-100 rounded text-slate-500 disabled:opacity-20"><ArrowLeft size={16}/></button>
-                  <button onClick={() => rotatePage(idx)} className="p-1.5 hover:bg-blue-50 hover:text-blue-600 rounded text-slate-500"><RotateCw size={16}/></button>
-                  <button 
-                    onClick={() => toggleDelete(idx)} 
+                  <button onClick={() => movePage(idx, -1)} disabled={idx === 0} className="p-1.5 hover:bg-slate-100 rounded text-slate-500 disabled:opacity-20"><ArrowLeft size={16} /></button>
+                  <button onClick={() => rotatePage(idx)} className="p-1.5 hover:bg-blue-50 hover:text-blue-600 rounded text-slate-500"><RotateCw size={16} /></button>
+                  <button
+                    onClick={() => toggleDelete(idx)}
                     className={`p-1.5 rounded transition-colors ${page.isDeleted ? 'bg-red-100 text-red-600' : 'hover:bg-red-50 hover:text-red-500 text-slate-500'}`}
                   >
-                    {page.isDeleted ? <Undo size={16}/> : <Trash2 size={16}/>}
+                    {page.isDeleted ? <Undo size={16} /> : <Trash2 size={16} />}
                   </button>
-                  <button onClick={() => movePage(idx, 1)} disabled={idx === pages.length - 1} className="p-1.5 hover:bg-slate-100 rounded text-slate-500 disabled:opacity-20"><ArrowRight size={16}/></button>
+                  <button onClick={() => movePage(idx, 1)} disabled={idx === pages.length - 1} className="p-1.5 hover:bg-slate-100 rounded text-slate-500 disabled:opacity-20"><ArrowRight size={16} /></button>
                 </div>
               </div>
             </div>

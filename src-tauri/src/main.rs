@@ -255,14 +255,6 @@ async fn apply_encryption(file_path: String, password: String) -> Result<String,
     Ok(new_path.to_str().unwrap().to_string())
 }
 
-#[tauri::command]
-async fn save_file_to_disk(
-    _file_path: String,
-    _file_data_base64: String,
-) -> Result<String, String> {
-    Ok("".into())
-}
-
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
