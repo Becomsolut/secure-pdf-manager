@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { CreateMLCEngine, MLCEngine, InitProgressCallback } from "@mlc-ai/web-llm";
 import { Bot, FileText, Send, Loader2, Upload, AlertCircle, ArrowLeft, Cpu, Zap, BrainCircuit } from 'lucide-react';
@@ -409,7 +409,7 @@ ${input}
                                 </div>
                             )}
 
-                            {messages.filter(m => m.role !== 'system').map((msg, idx) => (
+                            {messages.filter(m => m.role !== 'system').map((msg, _) => (
                                 <div className={`max-w-[80%] rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-sm ${msg.role === 'user'
                                     ? selectedModel === MODELS.HIGH_RES ? 'bg-purple-600 text-white rounded-br-none' : 'bg-blue-600 text-white rounded-br-none'
                                     : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'

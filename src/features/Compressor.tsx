@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open as dialogOpen } from "@tauri-apps/plugin-dialog";
-import { UploadCloud, Loader2, ArrowRight, CheckCircle, Download } from 'lucide-react';
+import { UploadCloud, Loader2, CheckCircle, Download } from 'lucide-react';
 import { SaveModal } from '../components/SaveModal';
 
 export function Compressor({ onBack }: { onBack: () => void }) {
