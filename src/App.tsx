@@ -91,7 +91,7 @@ function App() {
       {currentView === 'dashboard' && (
         <header className="mb-10 text-center animate-in fade-in slide-in-from-top-4 duration-500">
           <h1 className="text-3xl font-extrabold text-slate-900 mb-2">
-            Sicherer PDF Editor
+            Secure PDF Manager
           </h1>
           <p className="text-slate-500">
             Daten bleiben lokal. Einfach, sicher, schnell.
@@ -126,8 +126,8 @@ function App() {
             onClick={() => setCurrentView('edit')}
           />
           <ActionCard
-            title="Smart"
-            description="Fotos in ein PDF-Dokument umwandeln."
+            title="AI Agent"
+            description="Offline Zusammenfassung und Q&A"
             icon={BotIcon}
             onClick={() => setCurrentView('ai-chat')}
           />
