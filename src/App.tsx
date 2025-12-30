@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import {
-  Files, Scissors, Image as ImageIcon, PenTool, Minimize2, Lock, AlertCircle
+  Files, Scissors, Image as ImageIcon, PenTool, Minimize2, Lock, AlertCircle,
+  Layers,
+  Edit3,
+  Bot,
+  FileImage
 } from "lucide-react";
 import { Merger } from "./features/Merger";
 import './App.css'
 import { Editor } from "./features/Editor";
 import { ImageToPdf } from "./features/ImageToPdf";
 import { Signer } from "./features/Signer";
-import { Protector } from "./features/Protector";
 import { Compressor } from "./features/Compressor";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
@@ -69,7 +72,16 @@ function App() {
     setEditorFile(mergedFile);
     setCurrentView('edit'); // Wechselt zum Editor
   };
+  const menuItems = [
+    { id: 'compress', title: 'Komprimieren', icon: <Minimize2 size={24} />, desc: 'PDF-Dateigröße reduzieren' },
+    { id: 'merge', title: 'Zusammenfügen', icon: <Layers size={24} />, desc: 'Mehrere PDFs verbinden' },
+    { id: 'editor', title: 'Bearbeiten', icon: <Edit3 size={24} />, desc: 'Seiten drehen & löschen' },
 
+    { id: 'ai-chat', title: 'Smart Analyse', icon: <Bot size={24} />, desc: 'Fragen an dein PDF stellen (Bald)', comingSoon: true },
+
+    { id: 'convert', title: 'Konvertieren', icon: <FileImage size={24} />, desc: 'PDF zu Bildern', comingSoon: true },
+    { id: 'sign', title: 'Unterschreiben', icon: <PenTool size={24} />, desc: 'Digital signieren', comingSoon: true },
+  ];
   return (
     <div className="min-h-screen p-8 flex flex-col items-center max-w-5xl mx-auto">
 
@@ -129,21 +141,15 @@ function App() {
             icon={Minimize2}
             onClick={() => setCurrentView('compress')}
           />
-          <ActionCard
-            title="Schützen"
-            description="Passwort hinzufügen."
-            icon={Lock}
-            onClick={() => setCurrentView('protect')}
-          />
         </main>
       )}
 
       {/* 2. Merger Ansicht */}
       {currentView === 'merge' && (
-        <Merger onBack={goHome} onEdit={handleMergerEdit}/>
+        <Merger onBack={goHome} onEdit={handleMergerEdit} />
       )}
       {currentView === 'edit' && (
-        <Editor onBack={goHome} initialFile={editorFile}/>
+        <Editor onBack={goHome} initialFile={editorFile} />
       )}
       {currentView === 'sign' && (
         <Signer onBack={goHome} />
@@ -151,9 +157,6 @@ function App() {
       {/* 4. Images Ansicht */}
       {currentView === 'images' && (
         <ImageToPdf onBack={goHome} />
-      )}
-      {currentView === 'protect' && (
-        <Protector onBack={goHome} />
       )}
       {currentView === 'compress' && (
         <Compressor onBack={goHome} />

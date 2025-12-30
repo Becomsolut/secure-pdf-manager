@@ -10,6 +10,10 @@
     "opener:default",
     "dialog:default",
     "shell:allow-open",
-    "fs:default"
+    "fs:default",
+    "fs:allow-download-write",
+    "fs:allow-document-write",
+    "fs:allow-desktop-write",
+    "fs:allow-home-write"
   ]
 }
